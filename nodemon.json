@@ -1,0 +1,15 @@
+{
+    "watch": [
+        "src",
+        "local.settings.json"
+    ],
+    "ext": "ts",
+    "ignore": [
+        "src/**/*.spec.ts"
+    ],
+    "exec": "npm run build && npm start",
+    "env": {
+        "NODE_ENV": "development"
+    }
+}
+
