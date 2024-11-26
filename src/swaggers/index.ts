@@ -29,7 +29,7 @@ export function validationV2<Path, ResBody, ReqBody, Query>(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const schemaValue: any = (<Request>req)[<keyof Request>key];
             if (!schema || schema === undefined) continue;
-            const result: ValidationResult<unknown> = (<ObjectSchema>schema).validate(schemaValue);
+            const result: ValidationResult<unknown> = (schema).validate(schemaValue);
             if (result.error) errors.push(result.error);
         }
 
