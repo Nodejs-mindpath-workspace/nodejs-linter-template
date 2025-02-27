@@ -59,7 +59,11 @@ export default class SwaggerHelper {
             swaggerSpecDefinition.definition!.components.schemas = requestSchemas;
             swaggerSpecDefinition.definition!.components.schemas.ApiResponse = responseJoiSchema;
             const swaggerSpec: object = SwaggerJSDoc(swaggerSpecDefinition);
-            router.use("/docs", <Array<RequestHandler>>swaggerUi.serve, <RequestHandler>swaggerUi.setup(swaggerSpec, { explorer: true }));
+            router.use(
+                "/docs",
+                <Array<RequestHandler>>swaggerUi.serve,
+                <RequestHandler>swaggerUi.setup(swaggerSpec, { explorer: true }),
+            );
             logger.info(`Docs available on =>> ${swaggerOptions.serverOrigin}/api/docs`);
         }
     }
@@ -158,7 +162,7 @@ export default class SwaggerHelper {
                     basePath +
                     SwaggerHelper.getPathFromRegex(<RegExp>(<unknown>middleware.regexp.source), middleware.keys);
                 const tempRoutes: Array<unknown> = SwaggerHelper.traverseAllRoutesWithSwaggerDoc(
-                    <Router><unknown>middleware.handle,
+                    <Router>(<unknown>middleware.handle),
                     saveSwaggerDocumentFilePath,
                     path,
                     traversedRouters,
