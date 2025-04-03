@@ -1,5 +1,5 @@
-import ISwaggerDefinition from "./definition";
-import ISwaggerRoutePath from "./routePath";
+import ISwaggerDefinition from "@/swaggers/interfaces/definition";
+import ISwaggerRoutePath from "@/swaggers/interfaces/routePath";
 
 interface IServeSwaggerOptions {
     apiRoutePath: string;

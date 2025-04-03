@@ -1,4 +1,4 @@
-import ExpressConstants from "../types/constants/express";
+import ExpressConstants from "@/swaggers/types/constants/express";
 
 const expressConstants: ExpressConstants = {
     REQUEST_PARAMETERS: ["body", "params", "query", "file"],

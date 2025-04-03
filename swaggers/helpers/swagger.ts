@@ -1,21 +1,21 @@
-import { ILayer, Router, RequestHandler } from "express-serve-static-core/index";
+import { Router } from "express";
 
 import { existsSync, writeFileSync } from "fs";
 import { globSync } from "glob";
 import HttpStatus from "http-status-codes";
-import j2s from "joi-to-swagger";
 import Joi, { Schema } from "joi";
+import j2s from "joi-to-swagger";
 import { join } from "path";
-import swaggerUi from "swagger-ui-express";
 import SwaggerJSDoc from "swagger-jsdoc";
+import swaggerUi from "swagger-ui-express";
 
-import constants from "../constants/constant";
-import swaggerConstants from "../constants/swagger";
-import commonJoiResponseSchema from "../defaultSchemas/response/common";
-import logger from "./logger";
-import ISwaggerRoutePath from "../interfaces/routePath";
-import IServeSwaggerOptions from "../interfaces/swaggerOptions";
-import JoiRequestSchema from "../types/requestSchema";
+import constants from "@/swaggers/constants/constant";
+import swaggerConstants from "@/swaggers/constants/swagger";
+import commonJoiResponseSchema from "@/swaggers/defaultSchemas/response/common";
+import logger from "@/swaggers/helpers/logger";
+import ISwaggerRoutePath from "@/swaggers/interfaces/routePath";
+import IServeSwaggerOptions from "@/swaggers/interfaces/swaggerOptions";
+import JoiRequestSchema from "@/swaggers/types/requestSchema";
 
 const requestSchemas: { [key: string]: unknown } = <{ [key: string]: unknown }>{};
 const traversedTags: Array<string> = constants.ARRAY.EMPTY<string>();
@@ -59,12 +59,10 @@ export default class SwaggerHelper {
             swaggerSpecDefinition.definition!.components.schemas = requestSchemas;
             swaggerSpecDefinition.definition!.components.schemas.ApiResponse = responseJoiSchema;
             const swaggerSpec: object = SwaggerJSDoc(swaggerSpecDefinition);
-            router.use(
-                "/docs",
-                <Array<RequestHandler>>swaggerUi.serve,
-                <RequestHandler>swaggerUi.setup(swaggerSpec, { explorer: true }),
-            );
-            logger.info(`Docs available on =>> ${swaggerOptions.serverOrigin}/api/docs`);
+            router.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+            logger.info({
+                message: `Docs available on =>> ${swaggerOptions.serverOrigin}${swaggerOptions.apiBashPath}/docs`,
+            });
         }
     }
 
@@ -74,6 +72,7 @@ export default class SwaggerHelper {
     ): SwaggerJSDoc.Options {
         return {
             definition: {
+                ...swaggerOptions.definition,
                 openapi: "3.0.0",
                 info: {
                     title: swaggerOptions.definition?.title ?? "API Documentation",
@@ -89,7 +88,7 @@ export default class SwaggerHelper {
                         url: pathPattern?.urlBasePath ?? swaggerOptions.serverOrigin,
                     },
                 ],
-                components: {
+                components: swaggerOptions.definition?.components ?? {
                     schemas: <{ [key: string]: unknown }>{},
                 },
                 tags: [],
@@ -116,7 +115,12 @@ export default class SwaggerHelper {
                 );
             }
         } catch (error) {
-            logger.error(error);
+            const convertedError: Error = <Error>error;
+            logger.error({
+                error,
+                errorStack: convertedError.stack,
+                message: convertedError.message,
+            });
         }
     }
 
@@ -128,7 +132,8 @@ export default class SwaggerHelper {
     ): Array<unknown> {
         const routes: Array<unknown> = [];
         traversedRouters.add(router);
-        router.stack.forEach((middleware: ILayer): void => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (<any>router).stack.forEach((middleware: any): void => {
             if (middleware.route) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 middleware.route.stack.forEach((layer: any): void => {
