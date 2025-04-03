@@ -1,6 +1,6 @@
 import { ObjectSchema } from "joi";
 
-import ApiResponse from "../../responses/apiResponse";
+import ApiResponse from "@/swaggers/types/responses/apiResponse";
 
 type CommonJoiResponseSchema = {
     ALL: ObjectSchema<ApiResponse>;

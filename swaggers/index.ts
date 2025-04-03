@@ -1,13 +1,16 @@
-import { NextFunction, Response, Request } from "express";
+import "dotenv/config";
+import "module-alias/register";
+
+import { NextFunction, Request, Response } from "express";
 
 import HttpStatus from "http-status-codes";
 import { ObjectSchema, ValidationResult } from "joi";
 
-import constants from "./constants/constant";
-import expressConstants from "./constants/express";
-import logger from "./helpers/logger";
-import ExpressError from "./helpers/expressError";
-import JoiRequestSchema from "./types/requestSchema";
+import constants from "@/swaggers/constants/constant";
+import expressConstants from "@/swaggers/constants/express";
+import ExpressError from "@/swaggers/helpers/expressError";
+import logger from "@/swaggers/helpers/logger";
+import JoiRequestSchema from "@/swaggers/types/requestSchema";
 
 export function validationV2<Path, ResBody, ReqBody, Query>(
     validateObject: JoiRequestSchema,
@@ -19,7 +22,9 @@ export function validationV2<Path, ResBody, ReqBody, Query>(
         (req: Request<Path, ResBody, ReqBody, Query>, _res: Response, next: NextFunction): void;
         schema: JoiRequestSchema;
     } = (req: Request<Path, ResBody, ReqBody, Query>, _res: Response, next: NextFunction): void => {
-        logger.info("====== validation middleware running v2 ======");
+        logger.info({
+            message: `====== validation middleware running v2 ======`,
+        });
         const errors: Array<unknown> = constants.ARRAY.EMPTY();
         const requestParameters: Array<string> = expressConstants.REQUEST_PARAMETERS;
 
@@ -29,7 +34,7 @@ export function validationV2<Path, ResBody, ReqBody, Query>(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const schemaValue: any = (<Request>req)[<keyof Request>key];
             if (!schema || schema === undefined) continue;
-            const result: ValidationResult<unknown> = (schema).validate(schemaValue);
+            const result: ValidationResult<unknown> = schema.validate(schemaValue);
             if (result.error) errors.push(result.error);
         }
 

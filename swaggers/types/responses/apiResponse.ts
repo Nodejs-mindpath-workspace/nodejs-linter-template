@@ -1,4 +1,4 @@
-import EmptyObject from "../emptyObject";
+import EmptyObject from "@/swaggers/types/emptyObject";
 
 type ApiResponse<T = EmptyObject> = { status: number; data: T | string; message: string };
 

@@ -1,7 +1,7 @@
 import Joi from "joi";
 
-import CommonJoiResponseSchema from "../../types/defaultSchemas/response/common";
-import ApiResponse from "../../types/responses/apiResponse";
+import CommonJoiResponseSchema from "@/swaggers/types/defaultSchemas/response/common";
+import ApiResponse from "@/swaggers/types/responses/apiResponse";
 
 const commonJoiResponseSchema: CommonJoiResponseSchema = {
     ALL: Joi.object<ApiResponse>({

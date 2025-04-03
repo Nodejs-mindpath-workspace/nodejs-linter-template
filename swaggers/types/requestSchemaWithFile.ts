@@ -1,6 +1,6 @@
 import { ObjectSchema } from "joi";
 
-import JoiRequestSchema from "./requestSchema";
+import JoiRequestSchema from "@/swaggers/types/requestSchema";
 
 type JoiRequestSchemaWithFile = JoiRequestSchema & {
     file: ObjectSchema;

@@ -1,4 +1,5 @@
 interface ISwaggerDefinition {
+    [key: string]: unknown;
     title: string;
     version: string;
     description: string;

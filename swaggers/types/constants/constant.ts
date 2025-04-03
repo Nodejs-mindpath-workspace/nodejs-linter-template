@@ -1,5 +1,9 @@
 type Constants = {
-    LITERALS: object;
+    LITERALS: {
+        STRINGS: {
+            EMPTY: () => string;
+        };
+    };
     ARRAY: {
         EMPTY: <T>() => Array<T>;
     };

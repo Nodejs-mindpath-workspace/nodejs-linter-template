@@ -1,4 +1,4 @@
-import SwaggerConstants from "../types/constants/swagger";
+import SwaggerConstants from "@/swaggers/types/constants/swagger";
 
 const swaggerConstants: SwaggerConstants = {
     getSwaggerDescribeWithRequestBody: (

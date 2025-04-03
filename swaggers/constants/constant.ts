@@ -1,7 +1,11 @@
-import Constants from "../types/constants/constant";
+import Constants from "@/swaggers/types/constants/constant";
 
 const constants: Constants = {
-    LITERALS: {},
+    LITERALS: {
+        STRINGS: {
+            EMPTY: (): string => "",
+        },
+    },
     ARRAY: {
         EMPTY: <T>(): Array<T> => new Array<T>(),
     },
