@@ -6,8 +6,8 @@ const constants: Constants = {
         EMPTY: <T>(): Array<T> => new Array<T>(),
     },
     OBJECT: {
-        EMPTY: <T>(): T => <T>({}),
-    }
-}
+        EMPTY: <T>(): T => <T>{},
+    },
+};
 
 export default constants;

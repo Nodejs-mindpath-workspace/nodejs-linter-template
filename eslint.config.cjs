@@ -1,0 +1,276 @@
+const typescriptEslint = require("@typescript-eslint/eslint-plugin");
+const tsParser = require("@typescript-eslint/parser");
+const js = require("@eslint/js");
+
+const { FlatCompat } = require("@eslint/eslintrc");
+
+const { includeIgnoreFile } = require("@eslint/compat");
+
+const path = require("node:path");
+const compat = new FlatCompat({
+    baseDirectory: __dirname,
+    recommendedConfig: js.configs.recommended,
+    allConfig: js.configs.all,
+});
+const gitignorePath = path.resolve(__dirname, ".gitignore");
+
+module.exports = [
+    { files: ["**/*.{ts,js}"] },
+    {
+        ignores: [
+            "**/logs",
+            "**/*.log",
+            "**/npm-debug.log*",
+            "**/yarn-debug.log*",
+            "**/yarn-error.log*",
+            "**/lerna-debug.log*",
+            "**/.pnpm-debug.log*",
+            "**/report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json",
+            "**/pids",
+            "**/*.pid",
+            "**/*.seed",
+            "**/*.pid.lock",
+            "**/lib-cov",
+            "**/coverage",
+            "**/*.lcov",
+            "**/.nyc_output",
+            "**/.grunt",
+            "**/bower_components",
+            "**/.lock-wscript",
+            "build/Release",
+            "**/node_modules/",
+            "**/jspm_packages/",
+            "**/web_modules/",
+            "**/*.tsbuildinfo",
+            "**/.npm",
+            "**/.eslintcache",
+            "**/.stylelintcache",
+            "**/.rpt2_cache/",
+            "**/.rts2_cache_cjs/",
+            "**/.rts2_cache_es/",
+            "**/.rts2_cache_umd/",
+            "**/.node_repl_history",
+            "**/*.tgz",
+            "**/.yarn-integrity",
+            "**/.env",
+            "**/.env.development.local",
+            "**/.env.test.local",
+            "**/.env.production.local",
+            "**/.env.local",
+            "**/.cache",
+            "**/.parcel-cache",
+            "**/.next",
+            "**/out",
+            "**/.nuxt",
+            "**/dist",
+            "**/.cache/",
+            ".vuepress/dist",
+            "**/.temp",
+            "**/.cache",
+            "**/.docusaurus",
+            "**/.serverless/",
+            "**/.fusebox/",
+            "**/.dynamodb/",
+            "**/.tern-port",
+            "**/.vscode-test",
+            ".yarn/cache",
+            ".yarn/unplugged",
+            ".yarn/build-state.yml",
+            ".yarn/install-state.gz",
+            "**/.pnp.*",
+            "**/.DS_Store",
+            "**/.vscode",
+            "**/.adminbro",
+        ],
+    },
+    includeIgnoreFile(gitignorePath),
+    ...compat.extends(
+        "eslint:recommended",
+        "plugin:@typescript-eslint/eslint-recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:prettier/recommended",
+    ),
+    {
+        plugins: {
+            "@typescript-eslint": typescriptEslint,
+        },
+
+        languageOptions: {
+            parser: tsParser,
+            ecmaVersion: 5,
+            sourceType: "module",
+
+            parserOptions: {
+                project: "./tsconfig.json",
+            },
+        },
+
+        rules: {
+            "@typescript-eslint/no-unused-vars": "warn",
+
+            "@typescript-eslint/array-type": [
+                "error",
+                {
+                    default: "generic",
+                },
+            ],
+
+            "@typescript-eslint/consistent-return": "error",
+
+            "@typescript-eslint/consistent-type-assertions": [
+                "error",
+                {
+                    assertionStyle: "angle-bracket",
+                    objectLiteralTypeAssertions: "allow",
+                },
+            ],
+
+            "@typescript-eslint/no-empty-interface": "error",
+            "@typescript-eslint/explicit-module-boundary-types": "error",
+
+            "@typescript-eslint/member-ordering": [
+                "error",
+                {
+                    default: [
+                        "signature",
+                        "call-signature",
+                        "#private-static-field",
+                        "public-static-field",
+                        "protected-static-field",
+                        "private-static-field",
+                        "private-decorated-field",
+                        "protected-decorated-field",
+                        "public-decorated-field",
+                        "#private-instance-field",
+                        "private-instance-field",
+                        "protected-instance-field",
+                        "public-instance-field",
+                        "#private-field",
+                        "private-field",
+                        "protected-abstract-field",
+                        "protected-field",
+                        "public-abstract-field",
+                        "public-field",
+                        "decorated-field",
+                        "field",
+                        "static-initialization",
+                        "private-constructor",
+                        "protected-constructor",
+                        "public-constructor",
+                        "#private-static-accessor",
+                        "private-static-accessor",
+                        "protected-static-accessor",
+                        "public-static-accessor",
+                        "private-decorated-accessor",
+                        "protected-decorated-accessor",
+                        "public-decorated-accessor",
+                        "#private-instance-accessor",
+                        "private-instance-accessor",
+                        "protected-instance-accessor",
+                        "public-instance-accessor",
+                        "protected-abstract-accessor",
+                        "public-abstract-accessor",
+                        "#private-accessor",
+                        "private-accessor",
+                        "protected-accessor",
+                        "public-accessor",
+                        "static-accessor",
+                        "instance-accessor",
+                        "abstract-accessor",
+                        "decorated-accessor",
+                        "accessor",
+                        "#private-static-set",
+                        "private-static-set",
+                        "protected-static-set",
+                        "public-static-set",
+                        "private-decorated-set",
+                        "protected-decorated-set",
+                        "public-decorated-set",
+                        "#private-instance-set",
+                        "private-instance-set",
+                        "protected-instance-set",
+                        "public-instance-set",
+                        "protected-abstract-set",
+                        "public-abstract-set",
+                        "#private-set",
+                        "private-set",
+                        "protected-set",
+                        "public-set",
+                        "static-set",
+                        "instance-set",
+                        "abstract-set",
+                        "decorated-set",
+                        "set",
+                        "#private-static-method",
+                        "private-static-method",
+                        "protected-static-method",
+                        "public-static-method",
+                        "private-decorated-method",
+                        "protected-decorated-method",
+                        "public-decorated-method",
+                        "protected-abstract-method",
+                        "public-abstract-method",
+                        "#private-instance-method",
+                        "private-instance-method",
+                        "protected-instance-method",
+                        "public-instance-method",
+                        "#private-method",
+                        "private-method",
+                        "protected-method",
+                        "public-method",
+                    ],
+                },
+            ],
+
+            "@typescript-eslint/method-signature-style": ["error", "property"],
+
+            "@typescript-eslint/naming-convention": [
+                "error",
+                {
+                    selector: "variableLike",
+                    format: ["camelCase"],
+                    leadingUnderscore: "allow",
+                    trailingUnderscore: "allow",
+                },
+                {
+                    selector: "class",
+                    format: ["PascalCase"],
+                },
+                {
+                    selector: "typeAlias",
+                    format: ["PascalCase"],
+                },
+                {
+                    selector: "interface",
+                    format: ["PascalCase"],
+
+                    custom: {
+                        regex: "^I[A-Z]",
+                        match: true,
+                    },
+                },
+                {
+                    selector: "enum",
+                    format: ["UPPER_CASE"],
+                },
+            ],
+
+            "@typescript-eslint/explicit-function-return-type": [
+                "error",
+                {
+                    allowExpressions: false,
+                    allowTypedFunctionExpressions: false,
+                },
+            ],
+
+            "@typescript-eslint/typedef": [
+                "error",
+                {
+                    variableDeclaration: true,
+                    arrowParameter: true,
+                    memberVariableDeclaration: true,
+                },
+            ],
+        },
+    },
+];
