@@ -1,7 +1,8 @@
 {
     "watch": [
         "src",
-        "local.settings.json"
+        "local.settings.json",
+        "swaggers"
     ],
     "ext": "ts",
     "ignore": [

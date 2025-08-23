@@ -5,11 +5,10 @@ import express from "express";
 
 import helmet from "helmet";
 import morgan from "morgan";
-import { join } from "path";
 
 import logger from "@/swaggers/helpers/logger";
-import SwaggerHelper from "@/swaggers/helpers/swagger";
-import IServeSwaggerOptions from "@/swaggers/interfaces/swaggerOptions";
+import { app1 } from "./app1";
+import { app2 } from "./app2";
 
 const app: express.Express = express();
 const port: number = 3000;
@@ -21,43 +20,8 @@ app.use(express.text());
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(morgan("dev"));
 
-// NOTE: Swagger integration for the APIs.Ø
-const swaggerOptions: IServeSwaggerOptions = {
-    apiBashPath: "/api",
-    apiRoutePath: join(__dirname, "routes"),
-    ignorePaths: [join(__dirname, "routes/**/*.d.ts"), join(__dirname, "routes/**/*.d.ts.map")],
-    saveSwaggerDocumentFilePath: join(__dirname, "swagger.js"),
-    serverOrigin: `http://localhost:3000`,
-    routePaths: [
-        {
-            filePath: join(__dirname, "routes"),
-            urlBasePath: "/api",
-        },
-    ],
-    definition: {
-        title: "<Server name>",
-        description: "",
-        version: "1.0.0",
-        license: {
-            name: "<Organization name>",
-        },
-        components: {
-            securitySchemes: {
-                BearerAuth: {
-                    type: "http",
-                    scheme: "bearer",
-                    bearerFormat: "JWT",
-                },
-            },
-        },
-        security: [
-            {
-                BearerAuth: [],
-            },
-        ],
-    },
-};
-SwaggerHelper.serveSwagger(swaggerOptions);
+app.use("/app1", app1);
+app.use("/app2", app2);
 
 app.listen(port, (): void => {
     try {

@@ -7,7 +7,6 @@ import Joi, { Schema } from "joi";
 import j2s from "joi-to-swagger";
 import { join } from "path";
 import SwaggerJSDoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
 
 import constants from "@/swaggers/constants/constant";
 import swaggerConstants from "@/swaggers/constants/swagger";
@@ -17,11 +16,11 @@ import ISwaggerRoutePath from "@/swaggers/interfaces/routePath";
 import IServeSwaggerOptions from "@/swaggers/interfaces/swaggerOptions";
 import JoiRequestSchema from "@/swaggers/types/requestSchema";
 
-const requestSchemas: { [key: string]: unknown } = <{ [key: string]: unknown }>{};
-const traversedTags: Array<string> = constants.ARRAY.EMPTY<string>();
-
 export default class SwaggerHelper {
-    private static async traverseFilesAndGetRouters(
+    private _requestSchemas: { [key: string]: unknown } = <{ [key: string]: unknown }>{};
+    private _traversedTags: Array<string> = constants.ARRAY.EMPTY<string>();
+
+    private async traverseFilesAndGetRouters(
         pathPattern: string,
         swaggerOptions: IServeSwaggerOptions,
         urlBasePath: string,
@@ -30,8 +29,6 @@ export default class SwaggerHelper {
             ignore: swaggerOptions.ignorePaths.map((p: string): string => p.replace(/\\/g, "/")),
         });
         const traversedRouters: Set<Router> = new Set<Router>();
-        const swaggerSpecDefinition: SwaggerJSDoc.Options =
-            SwaggerHelper.getSwaggerSpecOptionDefinitions(swaggerOptions);
 
         for (const path of paths) {
             const router: Router =
@@ -44,7 +41,7 @@ export default class SwaggerHelper {
                 if (traversedRouters.has(router)) continue;
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const routes: Array<any> = SwaggerHelper.traverseAllRoutesWithSwaggerDoc(
+                const routes: Array<any> = this.traverseAllRoutesWithSwaggerDoc(
                     router,
                     swaggerOptions.saveSwaggerDocumentFilePath,
                     urlBasePath,
@@ -54,19 +51,10 @@ export default class SwaggerHelper {
                 for (const route of routes)
                     console.log(`traversed route  method =>> ${Object.keys(route.methods)[0]} route =>> ${route.path}`);
             }
-
-            const { swagger: responseJoiSchema } = j2s(commonJoiResponseSchema.ALL);
-            swaggerSpecDefinition.definition!.components.schemas = requestSchemas;
-            swaggerSpecDefinition.definition!.components.schemas.ApiResponse = responseJoiSchema;
-            const swaggerSpec: object = SwaggerJSDoc(swaggerSpecDefinition);
-            router.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
-            logger.info({
-                message: `Docs available on =>> ${swaggerOptions.serverOrigin}${swaggerOptions.apiBashPath}/docs`,
-            });
         }
     }
 
-    public static getSwaggerSpecOptionDefinitions(
+    public getSwaggerSpecOptionDefinitions(
         swaggerOptions: IServeSwaggerOptions,
         pathPattern?: ISwaggerRoutePath,
     ): SwaggerJSDoc.Options {
@@ -97,23 +85,52 @@ export default class SwaggerHelper {
         };
     }
 
-    public static async serveSwagger(swaggerOptions: IServeSwaggerOptions): Promise<void> {
+    public async serveSwagger(swaggerOptions: IServeSwaggerOptions): Promise<void> {
         try {
+            this._requestSchemas = constants.OBJECT.EMPTY();
+            this._traversedTags = constants.ARRAY.EMPTY();
             if (swaggerOptions.routePaths) {
                 for (const pathPattern of swaggerOptions.routePaths) {
-                    await SwaggerHelper.traverseFilesAndGetRouters(
+                    await this.traverseFilesAndGetRouters(
                         pathPattern.filePath,
                         swaggerOptions,
                         pathPattern.urlBasePath,
                     );
                 }
             } else {
-                await SwaggerHelper.traverseFilesAndGetRouters(
+                await this.traverseFilesAndGetRouters(
                     swaggerOptions.apiRoutePath,
                     swaggerOptions,
                     swaggerOptions.apiBashPath,
                 );
             }
+
+            // eslint-disable-next-line @typescript-eslint/typedef
+            const swaggerJSDoc = await import("swagger-jsdoc");
+
+            const swaggerSpecDefinition: SwaggerJSDoc.Options = this.getSwaggerSpecOptionDefinitions(swaggerOptions);
+            const { swagger: responseJoiSchema } = j2s(commonJoiResponseSchema.ALL);
+            swaggerSpecDefinition.definition!.components.schemas = this._requestSchemas;
+            swaggerSpecDefinition.definition!.components.schemas.ApiResponse = responseJoiSchema;
+
+            const swaggerSpec: object = swaggerJSDoc.default(swaggerSpecDefinition);
+
+            // SwaggerUI dynamic import
+            // eslint-disable-next-line @typescript-eslint/typedef
+            const swaggerUi = await import("swagger-ui-express");
+
+            // Create new swagger UI instance for this app
+            // eslint-disable-next-line @typescript-eslint/typedef
+            const swaggerUiInstance = swaggerUi.setup(swaggerSpec, {
+                explorer: true,
+                customSiteTitle: `${swaggerOptions?.definition?.title} API Documentation`,
+            });
+
+            // Create unique swagger UI instance for this app
+            swaggerOptions.app.use(swaggerOptions.swaggerDocPath, swaggerUi.serveFiles(swaggerSpec), swaggerUiInstance);
+            logger.info({
+                message: `Docs available on =>> ${swaggerOptions.serverOrigin}${swaggerOptions.swaggerDocPath}`,
+            });
         } catch (error) {
             const convertedError: Error = <Error>error;
             logger.error({
@@ -124,7 +141,7 @@ export default class SwaggerHelper {
         }
     }
 
-    public static traverseAllRoutesWithSwaggerDoc(
+    public traverseAllRoutesWithSwaggerDoc(
         router: Router,
         saveSwaggerDocumentFilePath: string,
         basePath: string = "",
@@ -140,7 +157,7 @@ export default class SwaggerHelper {
                     // Check if the middleware has the `schema` property
                     if (layer.handle.schema) {
                         const schema: JoiRequestSchema = layer.handle.schema;
-                        const describe: string = SwaggerHelper.defaultDescribe(
+                        const describe: string = this.defaultDescribe(
                             schema,
                             basePath + middleware.route!.path,
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -164,9 +181,8 @@ export default class SwaggerHelper {
             } else if (middleware.name === "router" && (<any>middleware.handle).stack) {
                 // If it's another router, recurse into it
                 const path: string =
-                    basePath +
-                    SwaggerHelper.getPathFromRegex(<RegExp>(<unknown>middleware.regexp.source), middleware.keys);
-                const tempRoutes: Array<unknown> = SwaggerHelper.traverseAllRoutesWithSwaggerDoc(
+                    basePath + this.getPathFromRegex(<RegExp>(<unknown>middleware.regexp.source), middleware.keys);
+                const tempRoutes: Array<unknown> = this.traverseAllRoutesWithSwaggerDoc(
                     <Router>(<unknown>middleware.handle),
                     saveSwaggerDocumentFilePath,
                     path,
@@ -179,7 +195,7 @@ export default class SwaggerHelper {
         return routes;
     }
 
-    public static defaultDescribe(
+    public defaultDescribe(
         schema: {
             params: Schema;
             body: Schema;
@@ -192,8 +208,8 @@ export default class SwaggerHelper {
         apiUrl: string,
         method: string,
     ): string {
-        const pathParams: string = SwaggerHelper.addPathOrQueryParam(schema.params, "path").trim();
-        const queryParams: string = SwaggerHelper.addPathOrQueryParam(schema.query, "query").trim();
+        const pathParams: string = this.addPathOrQueryParam(schema.params, "path").trim();
+        const queryParams: string = this.addPathOrQueryParam(schema.query, "query").trim();
         const schemaName: string = `${apiUrl.replace(/:|-/g, "").replace(/\//g, "").concat(method)}`;
 
         let successStatusCode: number;
@@ -217,15 +233,15 @@ export default class SwaggerHelper {
         let parameters: string = "";
         const haveRequestBody: boolean = schema.body && Object.keys(schema.body.describe().keys).length !== 0;
         const haveResponseBody: false | Joi.AnySchema<unknown> = schema.responseBody?.body ?? false;
-        const group: string = SwaggerHelper.getGroupFromPath(apiUrl);
+        const group: string = this.getGroupFromPath(apiUrl);
 
-        if (!traversedTags.includes(group)) {
-            traversedTags.push(group);
+        if (!this._traversedTags.includes(group)) {
+            this._traversedTags.push(group);
         }
 
         if (haveRequestBody) {
             const { swagger: bodyParams } = j2s(schema.body);
-            if (Object.keys(bodyParams).length) requestSchemas[schemaName] = bodyParams;
+            if (Object.keys(bodyParams).length) this._requestSchemas[schemaName] = bodyParams;
         }
 
         if (pathParams && queryParams) {
@@ -243,7 +259,7 @@ ${queryParams}`;
         if (haveResponseBody && schema.responseBody) {
             const { swagger: bodyParams } = j2s(schema.responseBody?.body);
             const responseSchemaName: string = schemaName.concat("response");
-            if (Object.keys(bodyParams).length) requestSchemas[responseSchemaName] = bodyParams;
+            if (Object.keys(bodyParams).length) this._requestSchemas[responseSchemaName] = bodyParams;
             contentType = schema.responseBody.contentType;
             responseSchemaRef = `#/components/schemas/${responseSchemaName}`;
         }
@@ -282,7 +298,7 @@ ${queryParams}`;
         }
     }
 
-    public static addPathOrQueryParam(schema: Schema, queryIn: string): string {
+    public addPathOrQueryParam(schema: Schema, queryIn: string): string {
         let describe: string = "";
         const { swagger: requestValidation } = j2s(schema);
         const required: boolean = queryIn === "path";
@@ -303,7 +319,7 @@ ${queryParams}`;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public static getPathFromRegex(regex: RegExp, keys: Array<any> = []): string {
+    public getPathFromRegex(regex: RegExp, keys: Array<any> = []): string {
         let replaceWith: string = ":id";
         if (Array.isArray(keys) && keys.length) {
             if (keys[0].name && !keys[0].optional) replaceWith = `:${keys[0].name}`;
@@ -318,7 +334,7 @@ ${queryParams}`;
             .replace(/\^\?:\\\/\[\^\/\]\+\?\)\)/g, `/${replaceWith}`); // Replace ^?:\/[^/]+?)) groups with placeholder.
     }
 
-    public static getGroupFromPath(path: string): string {
+    public getGroupFromPath(path: string): string {
         // Normalize the path by removing leading and trailing slashes
         const normalizedPath: string = path.replace(/^\/+|\/+$/g, "");
 
