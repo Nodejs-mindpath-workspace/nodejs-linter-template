@@ -1,22 +1,40 @@
+import SchemaRefHelper from "@/swaggers/helpers/schemaRef";
 import SwaggerConstants from "@/swaggers/types/constants/swagger";
+import ResponseSchemaRef from "@/swaggers/types/defaultSchemas/schemaRef";
 
 const swaggerConstants: SwaggerConstants = {
-    getSwaggerDescribeWithRequestBody: (
-        apiUrl: string,
-        method: string,
-        parameters: string,
-        schemaName: string,
-        successStatusCode: number,
-        group: string,
-        contentType: string,
-        responseSchemaRef: string,
-    ): string => {
+    getSwaggerDescribeWithRequestBody: (request: {
+        apiUrl: string;
+        method: string;
+        parameters: string;
+        schemaName: string;
+        successStatusCode: number;
+        group: string;
+        contentType: string;
+        responseSchemaRef: string;
+        responseSchemaRefs?: Array<ResponseSchemaRef>;
+        description: string;
+        summary: string;
+    }): string => {
+        const {
+            apiUrl,
+            group,
+            method,
+            parameters,
+            schemaName,
+            successStatusCode,
+            contentType,
+            responseSchemaRef,
+            responseSchemaRefs,
+            description,
+            summary
+        } = request;
         return `/**
 * @swagger
 * ${apiUrl.replace(/:(\w+)/g, "{$1}")}:
 *   ${method}:
-*     summary: ${group}
-*     description: ${group}
+*     summary: ${summary}
+*     description: ${description}
 *     tags:
 *       - ${group}
 ${parameters}
@@ -26,97 +44,79 @@ ${parameters}
 *         application/json:
 *           schema:
 *             $ref: '#/components/schemas/${schemaName}'
-*     responses:
-*       '${successStatusCode}':
-*         description: Success response
-*         content:
-*           ${contentType}:
-*             schema:
-*               $ref: '${responseSchemaRef}'
-*       '400':
-*         description: Bad request
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ApiResponse'
-*             example:
-*               status: 400
-*               success: "fail"
-*               data: null
+${SchemaRefHelper.getResponses(responseSchemaRefs ?? [{ contentType, statusCode: successStatusCode, responseSchemaRef, description: "Success Message" }])}
 */`;
     },
-    getSwaggerWithoutRequestBody: (
-        apiUrl: string,
-        method: string,
-        parameters: string,
-        successStatusCode: number,
-        group: string,
-        contentType: string,
-        responseSchemaRef: string,
-    ): string => {
+    getSwaggerWithoutRequestBody: (request: {
+        apiUrl: string;
+        method: string;
+        parameters: string;
+        successStatusCode: number;
+        group: string;
+        contentType: string;
+        responseSchemaRef: string;
+        responseSchemaRefs?: Array<ResponseSchemaRef>;
+        description: string;
+        summary: string;
+    }): string => {
+        const {
+            apiUrl,
+            method,
+            parameters,
+            successStatusCode,
+            group,
+            contentType,
+            responseSchemaRef,
+            responseSchemaRefs,
+            description,
+            summary,
+        } = request;
         return `/**
 * @swagger
 * ${apiUrl.replace(/:(\w+)/g, "{$1}")}:
 *   ${method}:
-*     summary: ${group}
-*     description: ${group}
+*     summary: ${summary}
+*     description: ${description}
 *     tags:
 *       - ${group}
 ${parameters}
-*     responses:
-*       '${successStatusCode}':
-*         description: Success response
-*         content:
-*           ${contentType}:
-*             schema:
-*               $ref: '${responseSchemaRef}'
-*       '400':
-*         description: Bad request
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ApiResponse'
-*             example:
-*               status: 400
-*               success: "fail"
-*               data: null
+${SchemaRefHelper.getResponses(responseSchemaRefs ?? [{ contentType, statusCode: successStatusCode, responseSchemaRef, description: "Success Message" }])}
 */`;
     },
-    getDefaultSwaggerDescribe: (
-        apiUrl: string,
-        method: string,
-        parameters: string,
-        successStatusCode: number,
-        group: string,
-        contentType: string,
-        responseSchemaRef: string,
-    ): string => {
+    getDefaultSwaggerDescribe: (request: {
+        apiUrl: string;
+        method: string;
+        parameters: string;
+        successStatusCode: number;
+        group: string;
+        contentType: string;
+        responseSchemaRef: string;
+        responseSchemaRefs?: Array<ResponseSchemaRef>;
+        description: string;
+        summary: string;
+    }): string => {
+        const {
+            apiUrl,
+            method,
+            parameters,
+            successStatusCode,
+            group,
+            contentType,
+            responseSchemaRef,
+            responseSchemaRefs,
+            summary,
+            description,
+        } = request;
         return `/**
 * @swagger
 * ${apiUrl.replace(/:(\w+)/g, "{$1}")}:
 *   ${method}:
-*     summary: ${group}
-*     description: ${group}
+*     summary: ${summary}
+*     description: ${description}
 *     tags:
 *       - ${group}
 ${parameters}
-*     responses:
-*       '${successStatusCode}':
-*         description: Success response
-*         content:
-*           ${contentType}:
-*             schema:
-*               $ref: '${responseSchemaRef}'
-*       '400':
-*         description: Bad request
-*         content:
-*           application/json:
-*             schema:
-*               $ref: '#/components/schemas/ApiResponse'
-*             example:
-*               status: 400
-*               success: "fail"
-*               data: null
+${SchemaRefHelper.getResponses(responseSchemaRefs ?? [{ contentType, statusCode: successStatusCode, responseSchemaRef, description: "Success Message" }])}
 */`;
     },
 };

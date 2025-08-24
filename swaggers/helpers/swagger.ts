@@ -14,7 +14,9 @@ import commonJoiResponseSchema from "@/swaggers/defaultSchemas/response/common";
 import logger from "@/swaggers/helpers/logger";
 import ISwaggerRoutePath from "@/swaggers/interfaces/routePath";
 import IServeSwaggerOptions from "@/swaggers/interfaces/swaggerOptions";
+import ResponseSchemaRef from "@/swaggers/types/defaultSchemas/schemaRef";
 import JoiRequestSchema from "@/swaggers/types/requestSchema";
+import JoiRequestSchemaWithFile from "@/swaggers/types/requestschemawithfile";
 
 export default class SwaggerHelper {
     private _requestSchemas: { [key: string]: unknown } = <{ [key: string]: unknown }>{};
@@ -195,45 +197,42 @@ export default class SwaggerHelper {
         return routes;
     }
 
+    public getStatusCodeBaseOnMethod(method: string): number {
+        switch (method) {
+            case "put":
+                return HttpStatus.ACCEPTED;
+                break;
+
+            case "post":
+                return HttpStatus.CREATED;
+                break;
+
+            case "get":
+            default:
+                return HttpStatus.OK;
+                break;
+        }
+    }
+
     public defaultDescribe(
-        schema: {
-            params: Schema;
-            body: Schema;
-            query: Schema;
-            responseBody?: {
-                contentType: string;
-                body: Schema;
-            };
-        },
+        schema: JoiRequestSchema | JoiRequestSchemaWithFile,
         apiUrl: string,
         method: string,
     ): string {
         const pathParams: string = this.addPathOrQueryParam(schema.params, "path").trim();
         const queryParams: string = this.addPathOrQueryParam(schema.query, "query").trim();
         const schemaName: string = `${apiUrl.replace(/:|-/g, "").replace(/\//g, "").concat(method)}`;
+        const successStatusCode: number = schema.successStatusCode ?? this.getStatusCodeBaseOnMethod(method);
 
-        let successStatusCode: number;
         let contentType: string = "application/json";
         let responseSchemaRef: string = "#/components/schemas/ApiResponse";
-
-        switch (method) {
-            case "get":
-                successStatusCode = HttpStatus.OK;
-                break;
-
-            case "post":
-                successStatusCode = HttpStatus.CREATED;
-                break;
-
-            default:
-                successStatusCode = HttpStatus.ACCEPTED;
-                break;
-        }
+        let responseSchemaRefs: Array<ResponseSchemaRef> = [];
 
         let parameters: string = "";
         const haveRequestBody: boolean = schema.body && Object.keys(schema.body.describe().keys).length !== 0;
         const haveResponseBody: false | Joi.AnySchema<unknown> = schema.responseBody?.body ?? false;
-        const group: string = this.getGroupFromPath(apiUrl);
+        const hasApiResponse: boolean = !!schema.apiResponses;
+        const group: string = schema.group ?? this.getGroupFromPath(apiUrl);
 
         if (!this._traversedTags.includes(group)) {
             this._traversedTags.push(group);
@@ -256,6 +255,20 @@ ${pathParams}`;
 ${queryParams}`;
         }
 
+        if (hasApiResponse && schema.apiResponses) {
+            for (const [statusCode, value] of Object.entries(schema.apiResponses)) {
+                const { swagger: bodyParams } = j2s(value?.body);
+                const responseSchemaName: string = schemaName.concat("response");
+                if (Object.keys(bodyParams).length) this._requestSchemas[responseSchemaName] = bodyParams;
+                responseSchemaRefs.push(<ResponseSchemaRef>{
+                    contentType: value.contentType,
+                    responseSchemaRef: `#/components/schemas/${responseSchemaName}`,
+                    statusCode: parseInt(statusCode),
+                    description: value.description ?? "",
+                });
+            }
+        }
+
         if (haveResponseBody && schema.responseBody) {
             const { swagger: bodyParams } = j2s(schema.responseBody?.body);
             const responseSchemaName: string = schemaName.concat("response");
@@ -265,7 +278,7 @@ ${queryParams}`;
         }
 
         if (method === "get" || !haveRequestBody) {
-            return swaggerConstants.getSwaggerWithoutRequestBody(
+            return swaggerConstants.getSwaggerWithoutRequestBody({
                 apiUrl,
                 method,
                 parameters,
@@ -273,9 +286,12 @@ ${queryParams}`;
                 group,
                 contentType,
                 responseSchemaRef,
-            );
+                responseSchemaRefs,
+                description: schema.description ?? group,
+                summary: schema.summary ?? group,
+            });
         } else if (haveRequestBody) {
-            return swaggerConstants.getSwaggerDescribeWithRequestBody(
+            return swaggerConstants.getSwaggerDescribeWithRequestBody({
                 apiUrl,
                 method,
                 parameters,
@@ -284,9 +300,12 @@ ${queryParams}`;
                 group,
                 contentType,
                 responseSchemaRef,
-            );
+                responseSchemaRefs,
+                description: schema.description ?? group,
+                summary: schema.summary ?? group,
+            });
         } else {
-            return swaggerConstants.getDefaultSwaggerDescribe(
+            return swaggerConstants.getDefaultSwaggerDescribe({
                 apiUrl,
                 method,
                 parameters,
@@ -294,7 +313,10 @@ ${queryParams}`;
                 group,
                 contentType,
                 responseSchemaRef,
-            );
+                responseSchemaRefs,
+                description: schema.description ?? group,
+                summary: schema.summary ?? group,
+            });
         }
     }
 
