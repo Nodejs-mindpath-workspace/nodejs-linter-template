@@ -30,7 +30,7 @@ export function validationV2<Path, ResBody, ReqBody, Query>(
 
         for (const key of requestParameters) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const schema= validateObject[<keyof JoiRequestSchema>key];
+            const schema: any = validateObject[<keyof JoiRequestSchema>key];
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const schemaValue: any = (<Request>req)[<keyof Request>key];
             if (!schema || schema === undefined || !Joi.isSchema(schema)) continue;

@@ -16,7 +16,7 @@ type JoiRequestSchema = {
     successStatusCode?: number;
     commonJoiResponseSchema?: Schema;
     description?: string;
-    summary? : string;
+    summary?: string;
 };
 
 export default JoiRequestSchema;

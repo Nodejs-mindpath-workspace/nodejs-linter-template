@@ -20,7 +20,7 @@ app.use(express.text());
 app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 app.use(morgan("dev"));
 
-app.use("/app1", app1);
+app.use("/ice-cream", app1); // icecream
 app.use("/app2", app2);
 
 app.listen(port, (): void => {
