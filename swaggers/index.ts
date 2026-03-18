@@ -4,7 +4,7 @@ import "module-alias/register";
 import { NextFunction, Request, Response } from "express";
 
 import HttpStatus from "http-status-codes";
-import { ObjectSchema, ValidationResult } from "joi";
+import Joi, { ObjectSchema, ValidationResult } from "joi";
 
 import constants from "@/swaggers/constants/constant";
 import expressConstants from "@/swaggers/constants/express";
@@ -30,10 +30,11 @@ export function validationV2<Path, ResBody, ReqBody, Query>(
 
         for (const key of requestParameters) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const schema: ObjectSchema<any> = validateObject[<keyof JoiRequestSchema>key];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const schemaValue: any = (<Request>req)[<keyof Request>key];
-            if (!schema || schema === undefined) continue;
+            const rawSchema: JoiRequestSchema[keyof JoiRequestSchema] = validateObject[<keyof JoiRequestSchema>key];
+            // Only validate against Joi ObjectSchema instances (skip responseBody and undefined values).
+            if (!rawSchema || !Joi.isSchema(rawSchema)) continue;
+            const schema: ObjectSchema = rawSchema as ObjectSchema;
             const result: ValidationResult<unknown> = schema.validate(schemaValue);
             if (result.error) errors.push(result.error);
         }

@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { existsSync, writeFileSync } from "fs";
+import { existsSync, rmSync, writeFileSync } from "fs";
 import { globSync } from "glob";
 import HttpStatus from "http-status-codes";
 import Joi, { Schema } from "joi";
@@ -49,7 +49,9 @@ export default class SwaggerHelper {
                 );
 
                 for (const route of routes)
-                    console.log(`traversed route  method =>> ${Object.keys(route.methods)[0]} route =>> ${route.path}`);
+                    logger.info({
+                        message: `traversed route  method =>> ${Object.keys(route.methods)[0]} route =>> ${route.path}`,
+                    });
             }
         }
     }
@@ -89,6 +91,12 @@ export default class SwaggerHelper {
         try {
             this._requestSchemas = constants.OBJECT.EMPTY();
             this._traversedTags = constants.ARRAY.EMPTY();
+
+            // Remove any previously generated swagger doc file to prevent accumulation across restarts.
+            if (existsSync(swaggerOptions.saveSwaggerDocumentFilePath)) {
+                rmSync(swaggerOptions.saveSwaggerDocumentFilePath);
+            }
+
             if (swaggerOptions.routePaths) {
                 for (const pathPattern of swaggerOptions.routePaths) {
                     await this.traverseFilesAndGetRouters(
