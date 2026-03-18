@@ -8,7 +8,7 @@ export const app1: Express = express();
 
 app1.use("/api", app1Router);
 
-// NOTE: Swagger integration for the APIs.Ø
+// NOTE: Swagger integration for the APIs.
 const swaggerOptions: IServeSwaggerOptions = {
     app: app1,
     swaggerDocPath: "/app1-docs",
