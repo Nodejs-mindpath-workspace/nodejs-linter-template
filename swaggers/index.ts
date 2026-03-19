@@ -10,7 +10,12 @@ import constants from "@/swaggers/constants/constant";
 import expressConstants from "@/swaggers/constants/express";
 import ExpressError from "@/swaggers/helpers/expressError";
 import logger from "@/swaggers/helpers/logger";
+import { createTrackedRouter } from "@/swaggers/helpers/routeRegistry";
+import type { TrackedRouter } from "@/swaggers/helpers/routeRegistry";
 import JoiRequestSchema from "@/swaggers/types/requestSchema";
+
+export { createTrackedRouter };
+export type { TrackedRouter };
 
 export function validationV2<Path, ResBody, ReqBody, Query>(
     validateObject: JoiRequestSchema,

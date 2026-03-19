@@ -1,8 +1,8 @@
-import { validationV2 } from "@/swaggers/index";
-import { Request, Response, Router } from "express";
+import { createTrackedRouter, TrackedRouter, validationV2 } from "@/swaggers/index";
+import { Request, Response } from "express";
 import Joi from "joi";
 
-const app1Router: Router = Router();
+const app1Router: TrackedRouter = createTrackedRouter();
 
 app1Router.get(
     "/route1",

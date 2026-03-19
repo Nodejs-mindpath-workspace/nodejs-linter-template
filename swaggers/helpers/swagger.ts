@@ -12,6 +12,7 @@ import constants from "@/swaggers/constants/constant";
 import swaggerConstants from "@/swaggers/constants/swagger";
 import commonJoiResponseSchema from "@/swaggers/defaultSchemas/response/common";
 import logger from "@/swaggers/helpers/logger";
+import { getRegisteredRoutes, isTrackedRouter, TrackedRouter } from "@/swaggers/helpers/routeRegistry";
 import ISwaggerRoutePath from "@/swaggers/interfaces/routePath";
 import IServeSwaggerOptions from "@/swaggers/interfaces/swaggerOptions";
 import JoiRequestSchema from "@/swaggers/types/requestSchema";
@@ -31,28 +32,39 @@ export default class SwaggerHelper {
         const traversedRouters: Set<Router> = new Set<Router>();
 
         for (const path of paths) {
+            const mod = await import(path);
             const router: Router =
-                (await import(path)).default ||
-                (await import(path)).apiRoutes ||
-                (await import(path)).router ||
-                (await import(path)).assetsRoutes;
+                mod.default || mod.apiRoutes || mod.router || mod.assetsRoutes;
 
-            if (router?.stack) {
-                if (traversedRouters.has(router)) continue;
+            if (!router) continue;
+            if (traversedRouters.has(router)) continue;
+            traversedRouters.add(router);
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const routes: Array<any> = this.traverseAllRoutesWithSwaggerDoc(
+            // Prefer the registry-based approach (no Express `router.stack` introspection).
+            // Fall back to stack traversal only for routers not created with createTrackedRouter.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let routes: Array<any>;
+            if (isTrackedRouter(router)) {
+                routes = this.traverseRoutesFromRegistry(
+                    router,
+                    swaggerOptions.saveSwaggerDocumentFilePath,
+                    urlBasePath,
+                );
+            } else if ((router as any).stack) {
+                routes = this.traverseAllRoutesWithSwaggerDoc(
                     router,
                     swaggerOptions.saveSwaggerDocumentFilePath,
                     urlBasePath,
                     traversedRouters,
                 );
-
-                for (const route of routes)
-                    logger.info({
-                        message: `traversed route  method =>> ${Object.keys(route.methods)[0]} route =>> ${route.path}`,
-                    });
+            } else {
+                continue;
             }
+
+            for (const route of routes)
+                logger.info({
+                    message: `traversed route  method =>> ${Object.keys(route.methods)[0]} route =>> ${route.path}`,
+                });
         }
     }
 
@@ -199,6 +211,45 @@ export default class SwaggerHelper {
                 if (tempRoutes) routes.push(...tempRoutes);
             }
         });
+
+        return routes;
+    }
+
+    /**
+     * Registry-based alternative to `traverseAllRoutesWithSwaggerDoc`.
+     *
+     * Reads the explicit route list recorded by `createTrackedRouter` so that route
+     * discovery no longer depends on the internal Express `router.stack` property or
+     * the brittle regex-to-path conversion in `getPathFromRegex`.
+     *
+     * Returns the same `{ path, methods }` shape as `traverseAllRoutesWithSwaggerDoc`
+     * so callers are interchangeable.
+     */
+    public traverseRoutesFromRegistry(
+        router: TrackedRouter,
+        saveSwaggerDocumentFilePath: string,
+        basePath: string = "",
+    ): Array<{ path: string; methods: Record<string, boolean> }> {
+        const routes: Array<{ path: string; methods: Record<string, boolean> }> = [];
+
+        for (const entry of getRegisteredRoutes(router)) {
+            const fullPath: string = basePath + entry.path;
+
+            if (entry.schema) {
+                const describe: string = this.defaultDescribe(entry.schema, fullPath, entry.method);
+
+                if (!existsSync(join(saveSwaggerDocumentFilePath))) {
+                    writeFileSync(join(saveSwaggerDocumentFilePath), describe);
+                } else {
+                    writeFileSync(join(saveSwaggerDocumentFilePath), `\n\n${describe}`, { flag: "a+" });
+                }
+            }
+
+            routes.push({
+                path: fullPath,
+                methods: { [entry.method]: true },
+            });
+        }
 
         return routes;
     }
